@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "158826903409",
+    "project_id": "readaid-cd204",
+    "storage_bucket": "readaid-cd204.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:158826903409:android:d6bad09e30bef08d15e8d0",
+        "android_client_info": {
+          "package_name": "com.anonymous.readAidproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "158826903409-dam0l7pnrm7t5eabdq70l4eikaktsgpm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anonymous.readAidproject",
+            "certificate_hash": "e20c0357bed2178bfffa1c60accd2f9625cbb244"
+          }
+        },
+        {
+          "client_id": "158826903409-sr2lbqbiakeilo60sp6d9la9408r8m0v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9kMpMSG2_jjT6PiprFpxkYkKrRbLPQkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "158826903409-sr2lbqbiakeilo60sp6d9la9408r8m0v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
