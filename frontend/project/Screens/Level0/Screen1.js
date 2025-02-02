@@ -20,8 +20,9 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
   const [wordList, setWordList] = useState([]); 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [phoneticBreakdown, setPhoneticBreakdown] = useState("");  // Store phonetic breakdown
 
-  const level = route.params?.level; 
+  const level = route.params?.level;
 
   useEffect(() => {
     async function loadFonts() {
@@ -34,10 +35,9 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     async function fetchWords() {
       try {
         const response = await axios.get(
-          `http://10.100.20.136:5000/api/levels/${level}/words`
+          `http://192.168.161.54:5000/api/levels/${level}/words`
         );
 
-        
         const words = response.data.words || []; 
         console.log('API Response:', words);
 
@@ -49,9 +49,9 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error("Error fetching words:", error);
-        setWordList([]); // Handle API errors gracefully
+        setWordList([]); 
       } finally {
-        setLoading(false); // Ensure loading state is updated
+        setLoading(false); 
       }
     }
 
@@ -59,13 +59,18 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     fetchWords();
   }, [level]);
 
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000" />
-      </View>
-    );
-  }
+  const fetchPhoneticBreakdown = async (word) => {
+    try {
+      const response = await axios.post(
+        'http://192.168.161.54:5000/api/phonetic', 
+        { word: word }
+      );
+      setPhoneticBreakdown(response.data.phonetic_breakdown.join(' '));  // Update state with phonetic breakdown
+    } catch (error) {
+      console.error("Error fetching phonetic breakdown:", error);
+      setPhoneticBreakdown("Phonetic breakdown not available.");
+    }
+  };
 
   const handleNextWord = () => {
     if (currentIndex < wordList.length - 1) {
@@ -74,6 +79,24 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
       Alert.alert("End of Level", "You have reached the end of the level!");
     }
   };
+
+  useEffect(() => {
+    // Fetch phonetic breakdown for the current word
+    if (wordList.length > 0) {
+      const currentWord = wordList[currentIndex]?.word;
+      if (currentWord) {
+        fetchPhoneticBreakdown(currentWord);
+      }
+    }
+  }, [currentIndex, wordList]);
+
+  if (!fontsLoaded || loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   if (wordList.length === 0) {
     return (
@@ -93,7 +116,6 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.container}>
-          {/* Top decorative shapes */}
           <View style={styles.circle1}></View>
           <View style={styles.circle2}></View>
 
@@ -115,7 +137,10 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
               source={{ uri: currentWord?.imageUrl }}
               style={styles.image}
             />
-            <Text style={styles.sentence}>{currentWord?.word}</Text>
+            {/* <Text style={styles.sentence}>{currentWord?.word}</Text> */}
+            <Text style={styles.sentence}> {phoneticBreakdown || currentWord?.word} </Text>
+            {/* Phonetic Breakdown inside the Card */}
+            {/* <Text style={styles.phoneticBreakdown}>{phoneticBreakdown}</Text> */}
           </View>
 
           {/* Microphone Button */}
@@ -128,7 +153,6 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
             <Icon name="arrow-forward" size={24} color="#000" />
           </TouchableOpacity>
 
-          {/* Bottom decorative shapes */}
           <View style={styles.circle3}></View>
           <View style={styles.circle4}></View>
         </View>
@@ -220,6 +244,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontFamily: 'OpenDyslexic',
     color: '#000',
+    marginVertical: 20,
+  },
+  phoneticBreakdown: {
+    fontSize: 40,
+    fontFamily: 'OpenDyslexic',
+    color: '#17A2B8', // Bold color
+    fontWeight: 'bold', // Bold text
     marginVertical: 20,
   },
   micButton: {

@@ -42,7 +42,7 @@ const SignInScreen = ({ navigation, setIsAuthenticated }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://10.100.20.136:5000/api/signin', {
+      const response = await axios.post('http://192.168.161.54:5000/api/signin', {
         email: username,
         password: password,
       });

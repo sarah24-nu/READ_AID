@@ -15,7 +15,7 @@ const ForgetPasswordScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchSecurityQuestion = async () => {
       try {
-        const response = await axios.post('http://192.168.100.14:5000/api/get-security-question', { email });
+        const response = await axios.post('http://192.168.161.54:5000/api/get-security-question', { email });
         setSecurityQuestion(response.data.securityQuestion);
       } catch (error) {
         Alert.alert('Error', 'Failed to fetch security question. Please try again.');

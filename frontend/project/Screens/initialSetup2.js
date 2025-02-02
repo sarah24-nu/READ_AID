@@ -105,7 +105,7 @@ const InitialSetupTwoScreen = ({ navigation }) => {
     });
 
     try {
-      const response = await fetch('http://10.100.20.136:5000/api/process_audio', {
+      const response = await fetch('http://192.168.161.54:5000/api/process_audio', {
         method: 'POST',
         body: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
