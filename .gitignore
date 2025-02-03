@@ -8,6 +8,7 @@ node_modules/
 # Ignore virtual environment
 venv/
 backend/venv/
+backend/app/.env
 
 # Expo
 .expo/
