@@ -1,10 +1,36 @@
-Flask==2.3.2
-flask-cors==3.0.10
-pymongo==4.5.0
-numpy==1.26.0
+# Web Framework and Extensions
+Flask==3.0.2
+flask-cors==4.0.0
+flask-jwt-extended==4.6.0
+python-dotenv==1.0.1
+Werkzeug==3.0.1
+
+# MongoDB
+pymongo==4.6.1
+
+# Audio Processing Core
+pyAudioAnalysis==0.3.14
 pydub==0.25.1
-scipy==1.11.3
-SpeechRecognition==3.10.0
-pyAudioAnalysis==0.3.6
+SpeechRecognition==3.10.1
 pyttsx3==2.90
-noisereduce==3.0.3
+scipy==1.12.0
+numpy==1.26.4
+
+# Audio Processing Dependencies
+torch==2.2.0  # Required by noisereduce
+torchaudio==2.2.0  # Required for audio processing with PyTorch
+noisereduce==3.0.0
+librosa==0.10.1
+soundfile==0.12.1
+
+# PyAudioAnalysis Dependencies
+eyeD3==0.9.7
+matplotlib==3.8.3
+hmmlearn==0.3.2
+simplejson==3.19.2
+
+# Pronunciation
+pronouncing==0.2.0
+
+# Audio Backend Dependencies
+ffmpeg-python==0.2.0

@@ -5,6 +5,7 @@ import axios from 'axios';
 import * as Font from 'expo-font';
 import Icon from 'react-native-vector-icons/Ionicons';
 import globalStyles from '../styles/globalStyles';
+import { apiClient, ENDPOINTS } from '../config/api';
 
 const SignInScreen = ({ navigation, setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
@@ -33,20 +34,20 @@ const SignInScreen = ({ navigation, setIsAuthenticated }) => {
       navigation.replace('Configuration'); 
       return;
     }
-
+  
     if (!username.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter both username and password.');
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
-      const response = await axios.post('http://192.168.161.54:5000/api/signin', {
+      const response = await apiClient.post(ENDPOINTS.signin, {
         email: username,
         password: password,
       });
-
+  
       await AsyncStorage.setItem('token', response.data.token);
       setIsAuthenticated(true);
       navigation.replace('Configuration');

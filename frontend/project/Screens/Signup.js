@@ -11,6 +11,7 @@ import {
 } from 'react-native';  
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { apiClient, ENDPOINTS } from '../config/api';
 
 const SignUpScreen = ({ navigation }) => {  
   const [email, setEmail] = useState('');  
@@ -36,32 +37,29 @@ const SignUpScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
-
+  
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match.');
       return;
     }
-
+  
     try {
-      
-      const response = await axios.post('http://192.168.161.54:5000/api/signup', {
+      const response = await apiClient.post(ENDPOINTS.signup, {
         email,
         password,
         name,
         securityQuestion,
         securityAnswer,
       });
-
       
       Alert.alert('Success', 'Registration successful! Please log in.');
       navigation.navigate('SignIn');
     } catch (error) {
-      
       const errorMessage = error.response?.data?.error || 'Registration failed. Please try again.';
       Alert.alert('Error', errorMessage);
     }
   };
-
+  
   const handleSelectQuestion = (question) => {
     setSecurityQuestion(question);
     setModalVisible(false);

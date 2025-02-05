@@ -14,6 +14,7 @@ import {
 import * as Font from 'expo-font';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { apiClient, ENDPOINTS } from '../../config/api';
 
 const InitialSetupTwoScreen = ({ navigation, route }) => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -34,24 +35,19 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
 
     async function fetchWords() {
       try {
-        const response = await axios.get(
-          `http://192.168.161.54:5000/api/levels/${level}/words`
-        );
-
-        const words = response.data.words || []; 
-        console.log('API Response:', words);
-
+        const response = await apiClient.get(`${ENDPOINTS.levels}/${level}/words`);
+        const words = response.data.words || [];
         if (Array.isArray(words)) {
-          setWordList(words); 
+          setWordList(words);
         } else {
           console.error("Invalid data format received:", response.data);
-          setWordList([]); 
+          setWordList([]);
         }
       } catch (error) {
         console.error("Error fetching words:", error);
-        setWordList([]); 
+        setWordList([]);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     }
 
@@ -61,11 +57,8 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
 
   const fetchPhoneticBreakdown = async (word) => {
     try {
-      const response = await axios.post(
-        'http://192.168.161.54:5000/api/phonetic', 
-        { word: word }
-      );
-      setPhoneticBreakdown(response.data.phonetic_breakdown.join(' '));  // Update state with phonetic breakdown
+      const response = await apiClient.post(ENDPOINTS.phonetic, { word: word });
+      setPhoneticBreakdown(response.data.phonetic_breakdown.join(' '));
     } catch (error) {
       console.error("Error fetching phonetic breakdown:", error);
       setPhoneticBreakdown("Phonetic breakdown not available.");
