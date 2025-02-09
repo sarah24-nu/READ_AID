@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';  
 import axios from 'axios';
 import globalStyles from '../styles/globalStyles';
+import { apiClient, ENDPOINTS } from '../config/api';
 
 const ForgetPasswordScreen = ({ route, navigation }) => {  
   const { email } = route.params; 
@@ -15,7 +16,7 @@ const ForgetPasswordScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchSecurityQuestion = async () => {
       try {
-        const response = await axios.post('http://192.168.161.54:5000/api/get-security-question', { email });
+        const response = await apiClient.post(ENDPOINTS.securityQuestion, { email });
         setSecurityQuestion(response.data.securityQuestion);
       } catch (error) {
         Alert.alert('Error', 'Failed to fetch security question. Please try again.');
@@ -27,27 +28,22 @@ const ForgetPasswordScreen = ({ route, navigation }) => {
   }, [email]);
 
   const handlePasswordReset = async () => {  
-    if (!securityAnswer) {  
-      Alert.alert('Error', 'Please answer the security question.');  
-      return;  
-    }  
-    if (!password || !confirmPassword) {  
-      Alert.alert('Error', 'Please enter and confirm the new password.');  
+    if (!securityAnswer || !password || !confirmPassword) {  
+      Alert.alert('Error', 'Please fill in all fields.');  
       return;  
     }  
     if (password !== confirmPassword) {  
       Alert.alert('Error', 'Passwords do not match.');  
       return;  
     }
-
+  
     try {
-     
-      const response = await axios.post('http://192.168.100.14:5000/api/reset-password', {
+      const response = await apiClient.post(ENDPOINTS.resetPassword, {
         email,
         securityAnswer,
         newPassword: password,
       });
-
+  
       if (response.data.success) {
         Alert.alert('Success', 'Password reset successfully!');
         navigation.navigate('SignIn');

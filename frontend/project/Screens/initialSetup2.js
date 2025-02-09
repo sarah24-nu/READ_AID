@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import globalStyles from '../styles/globalStyles';
+import { apiClient, ENDPOINTS } from '../config/api';
 
 const InitialSetupTwoScreen = ({ navigation }) => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -103,16 +104,13 @@ const InitialSetupTwoScreen = ({ navigation }) => {
       name: 'audio.wav',
       type: 'audio/wav',
     });
-
+  
     try {
-      const response = await fetch('http://192.168.161.54:5000/api/process_audio', {
-        method: 'POST',
-        body: formData,
+      const response = await apiClient.post(ENDPOINTS.processAudio, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      if (response.ok) {
-        const result = await response.json();
+  
+      if (response.data) {
         Alert.alert('Success', 'Audio processed and voice synthesized!');
       } else {
         Alert.alert('Error', 'Audio processing failed.');
