@@ -9,6 +9,7 @@ from config import Config
 
 app = Flask(__name__)
 CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 # Load configurations
 app.config.from_object(Config)

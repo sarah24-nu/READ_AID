@@ -24,6 +24,16 @@ def get_phonetic_breakdown(word):
     else:
         return ["No phonetic breakdown found."]
 
+@auth_bp.route('/test_db', methods=['GET'])
+def test_db():
+    try:
+        test_data = {"test": "connection successful"}
+        user_model.db["test_collection"].insert_one(test_data)
+        data = user_model.db["test_collection"].find_one({"test": "connection successful"})
+        return jsonify({"message": "Connected successfully!", "data": data["test"]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():

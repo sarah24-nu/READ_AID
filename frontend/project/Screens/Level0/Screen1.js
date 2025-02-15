@@ -14,14 +14,20 @@ import {
 import * as Font from 'expo-font';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
+import { Audio } from "expo-av";
 import { apiClient, ENDPOINTS } from '../../config/api';
 
 const InitialSetupTwoScreen = ({ navigation, route }) => {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const [wordList, setWordList] = useState([]); 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [recording, setRecording] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [phoneticBreakdown, setPhoneticBreakdown] = useState("");  // Store phonetic breakdown
+  const [phoneticBreakdown, setPhoneticBreakdown] = useState("");  
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [sound, setSound] = useState(null);
+  const volume = 1.0;// Ensure volume is initialized
+  const [speechSettings, setSpeechSettings] = useState(null);
 
   const level = route.params?.level;
 
@@ -55,15 +61,102 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     fetchWords();
   }, [level]);
 
+  useEffect(() => {
+    const fetchSpeechSettings = async () => {
+      if (currentWord?._id) {
+        try {
+          const settings = await getSpeechSettings(currentWord._id);
+          setSpeechSettings(settings);
+        } catch (error) {
+          console.error('Error fetching speech settings:', error);
+        }
+      }
+    };
+
+    fetchSpeechSettings();
+  }, [currentIndex, wordList]);
+
   const fetchPhoneticBreakdown = async (word) => {
     try {
       const response = await apiClient.post(ENDPOINTS.phonetic, { word: word });
       setPhoneticBreakdown(response.data.phonetic_breakdown.join(' '));
     } catch (error) {
       console.error("Error fetching phonetic breakdown:", error);
-      setPhoneticBreakdown("Phonetic breakdown not available.");
+      Alert.alert("Phonetic breakdown not available.");
     }
   };
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const handleSpeak = async (text) => {
+    if (isSpeaking) return;
+
+    try {
+      setIsSpeaking(true);
+
+      // Request audio playback permissions
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        staysActiveInBackground: false,
+        playThroughEarpieceAndroid: false,
+      });
+
+      // Send request to backend to generate and return audio file
+      const response = await fetch('http://10.100.28.236:5000/api/generate_voice_from_db', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        console.log(data);
+        throw new Error("Failed to fetch audio");
+        
+      }
+
+      // Convert response to a blob
+      const audioBlob = await response.blob();
+      const audioUri = URL.createObjectURL(audioBlob); // Create local URL
+
+      // Stop and unload any previously playing audio
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+
+      // Load and play the new audio
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true, volume }
+      );
+      setSound(newSound);
+
+      // Wait for the audio to finish playing
+      newSound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.didJustFinish) {
+          setIsSpeaking(false);
+          await newSound.unloadAsync();
+        }
+      });
+    } catch (error) {
+      console.error("Error in handleSpeak:", error);
+      
+    } finally {
+      setIsSpeaking(false);
+    }
+  };
+
+  
 
   const handleNextWord = () => {
     if (currentIndex < wordList.length - 1) {
@@ -73,8 +166,87 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') {
+        Alert.alert('Permission denied', 'Audio recording permission is required.');
+        return;
+      }
+
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_PCM_16BIT,
+          audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_PCM_16BIT,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+        },
+        ios: {
+          extension: '.wav',
+          audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+      });
+      setRecording(recording);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) {
+      Alert.alert('Error', 'No active recording found.');
+      return;
+    }
+
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+
+      if (!fileInfo.exists) {
+        Alert.alert('Error', 'Recording failed.');
+        return;
+      }
+
+      await uploadAudio(uri);
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+    } finally {
+      setRecording(null);
+    }
+  };
+
+  const uploadAudio = async (uri) => {
+    const formData = new FormData();
+    formData.append('audio', {
+      uri,
+      name: 'audio.wav',
+      type: 'audio/wav',
+    });
+
+    try {
+      const response = await apiClient.post(ENDPOINTS.processAudio, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Audio processed and voice synthesized!');
+      } else {
+        Alert.alert('Error', 'Audio processing failed.');
+      }
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      Alert.alert('Error', 'Failed to upload audio.');
+    }
+  };
+
   useEffect(() => {
-    // Fetch phonetic breakdown for the current word
     if (wordList.length > 0) {
       const currentWord = wordList[currentIndex]?.word;
       if (currentWord) {
@@ -99,7 +271,6 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
     );
   }
 
-  // Safely extract word and imageUrl using optional chaining
   const currentWord = wordList[currentIndex];
 
   return (
@@ -112,7 +283,6 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
           <View style={styles.circle1}></View>
           <View style={styles.circle2}></View>
 
-          {/* Back Arrow */}
           <TouchableOpacity
             style={styles.backArrow}
             onPress={() => navigation.goBack()}
@@ -120,28 +290,51 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
             <Icon name="arrow-back" size={24} color="#000" />
           </TouchableOpacity>
 
-          {/* Title and Subtitle */}
           <Text style={styles.title}>Tap microphone and</Text>
           <Text style={styles.subtitle}>read aloud</Text>
 
-          {/* Word Card */}
           <View style={styles.card}>
             <Image
               source={{ uri: currentWord?.imageUrl }}
               style={styles.image}
             />
-            {/* <Text style={styles.sentence}>{currentWord?.word}</Text> */}
-            <Text style={styles.sentence}> {phoneticBreakdown || currentWord?.word} </Text>
-            {/* Phonetic Breakdown inside the Card */}
-            {/* <Text style={styles.phoneticBreakdown}>{phoneticBreakdown}</Text> */}
+            <View style={styles.wordContainer}>
+              <Text style={styles.sentence}>{currentWord?.word}</Text>
+              <TouchableOpacity 
+                style={styles.speakerButton}
+                onPress={() => handleSpeak(currentWord?.word)}
+                disabled={isSpeaking}
+              >
+                <Icon 
+                  name={isSpeaking ? "volume-high" : "volume-medium"} 
+                  size={24} 
+                  color={isSpeaking ? "#4CAF50" : "#000"} 
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.phoneticContainer}>
+              <Text style={styles.phoneticBreakdown}>{phoneticBreakdown}</Text>
+              <TouchableOpacity 
+                style={styles.speakerButton}
+                onPress={() => handleSpeak(phoneticBreakdown, true)}
+                disabled={isSpeaking}
+              >
+                <Icon 
+                  name="volume-low" 
+                  size={20} 
+                  color={isSpeaking ? "#4CAF50" : "#000"} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Microphone Button */}
-          <TouchableOpacity style={styles.micButton}>
-            <Icon name="mic" size={24} color="black" />
+          <TouchableOpacity
+            style={styles.micButton}
+            onPress={recording ? stopRecording : startRecording}
+          >
+            <Icon name={recording ? 'stop' : 'mic'} size={24} color="black" />
           </TouchableOpacity>
 
-          {/* Next Button */}
           <TouchableOpacity style={styles.nextButton} onPress={handleNextWord}>
             <Icon name="arrow-forward" size={24} color="#000" />
           </TouchableOpacity>
@@ -205,6 +398,30 @@ const styles = StyleSheet.create({
     top: 60,
     left: 20,
   },
+  micButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    marginVertical: 20,
+  },
+  wordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  phoneticContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  speakerButton: {
+    padding: 10,
+    marginLeft: 10,
+  },
   title: {
     fontSize: 20,
     fontFamily: 'OpenDyslexic',
@@ -237,24 +454,12 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontFamily: 'OpenDyslexic',
     color: '#000',
-    marginVertical: 20,
   },
   phoneticBreakdown: {
-    fontSize: 40,
+    fontSize: 30,
     fontFamily: 'OpenDyslexic',
     color: '#17A2B8', // Bold color
-    fontWeight: 'bold', // Bold text
-    marginVertical: 20,
-  },
-  micButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#FFF',
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    marginVertical: 20,
+    marginVertical: 10,
   },
   nextButton: {
     position: 'absolute',

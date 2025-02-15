@@ -11,7 +11,7 @@ import pyttsx3
 import speech_recognition as sr
 
 # Add ffmpeg path to system PATH
-os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\ffmpeg-7.1-essentials_build\bin"
+os.environ["PATH"] += os.pathsep + r"C:\Users\DELL\Downloads\ffmpeg-2025-02-02-git-957eb2323a-full_build\ffmpeg-2025-02-02-git-957eb2323a-full_build\bin"
 
 # Detect pauses in audio
 def detect_pauses(file_path, min_silence_len=300, silence_thresh=-35):
@@ -69,13 +69,31 @@ def speech_to_text_from_file(audio_file_path):
 
 # Text-to-speech
 def text_to_speech_with_features(text, mean_pitch=100, mean_intensity=500.0, speech_speed=200, pauses=[]):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', int(speech_speed * 100))
-    engine.setProperty('volume', mean_intensity)
-    engine.setProperty('pitch', mean_pitch)
-    engine.say(text)
-    engine.runAndWait()
+    try:
+        engine = pyttsx3.init()
+        engine.setProperty('rate', int(speech_speed * 100))
+        engine.setProperty('volume', mean_intensity)
+        engine.setProperty('pitch', mean_pitch)
+        engine.say(text)
+        folder = "audioUploads"
+        os.makedirs(folder, exist_ok=True)
+        filepath = os.path.join(folder, "speech_output.mp3")
 
+        
+        engine.save_to_file(text, filepath)
+        engine.runAndWait()
+
+       
+        if os.path.exists(filepath):
+            print(f"Speech file saved at: {filepath}")
+            return filepath
+        else:
+            print("Error: Speech file was not created.")
+            return None
+
+    except Exception as e:
+        print(f"Error in text_to_speech_with_features: {str(e)}")
+        return None
 # Main processing function
 def process_audio(input_audio_path):
     cleaned_audio_path = "cleaned_audio.wav"

@@ -1,7 +1,7 @@
 // config/api.js
 export const API_CONFIG = {
     development: {
-        baseURL: 'http://192.168.100.10:5000',
+        baseURL: 'http://10.100.28.236:5000',
         timeout: 10000,
     },
     production: {
@@ -20,6 +20,8 @@ export const ENDPOINTS = {
     processAudio: '/api/process_audio',
     signin: '/api/signin',
     signup: '/api/signup',
+    generate_voice_from_db: '/api/generate_voice_from_db'
+    
     // Add all your endpoints here
 };
 

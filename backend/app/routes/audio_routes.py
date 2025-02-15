@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app,send_file
 from audioprocessing import (
     process_audio,
     extract_pitch_formants_intensity,
@@ -10,10 +10,19 @@ from audioprocessing import (
 from pymongo import MongoClient
 from config import Config
 import subprocess
+from werkzeug.utils import secure_filename
+from datetime import datetime
+audio_global_data = ""
+
+
 
 audio_bp = Blueprint('audio', __name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+AUDIO_FOLDER='audioUploads'
+os.makedirs(AUDIO_FOLDER,exist_ok=True)
 
 client = MongoClient(Config.MONGODB_URI, serverSelectionTimeoutMS=5000)
 db = client["audio_database"]
@@ -59,6 +68,8 @@ def process_audio_route():
             "pauses": pauses,
         }
         result = collection.insert_one(audio_data)
+        global audio_global_data
+        audio_global_data = audio_data
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -76,3 +87,42 @@ def process_audio_route():
             "pauses": pauses,
         }
     })
+
+@audio_bp.route('/generate_voice_from_db', methods=['POST'])
+def generate_voice_from_db():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid JSON"}), 400  # Handle missing JSON data
+
+        text = data.get('text', "Default speech")
+        if not text:
+            return jsonify({"error": "Text is required"}), 400  # Handle missing text
+
+        pitch = audio_global_data.get("pitch", 100)
+        intensity = 0.6
+        speech_speed = 0.8
+        pauses = audio_global_data.get("pauses", [])
+
+        # Generate a unique filename
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        filename = f"speech_output_{timestamp}.mp3"
+        filepath = os.path.join(AUDIO_FOLDER, filename)
+
+        # Check if folder exists, create if needed
+        if not os.path.exists(AUDIO_FOLDER):
+            os.makedirs(AUDIO_FOLDER)
+
+        # Generate the audio file
+        text_to_speech_with_features(text, pitch, intensity, speech_speed, pauses)
+
+        # Verify file was created
+        if not os.path.exists(filepath):
+            return jsonify({"error": "Generated audio file is missing"}), 500
+
+        # Send the file directly to the frontend
+        return send_file(filepath, mimetype="audio/mpeg")
+
+    except Exception as e:
+        current_app.logger.error(f"Error generating speech: {str(e)}")
+        return jsonify({"error": str(e)}), 500
