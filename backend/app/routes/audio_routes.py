@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, jsonify, request, current_app,send_file
-from audioprocessing import (
+import logging
+from app.audioprocessing import (
     process_audio,
     extract_pitch_formants_intensity,
     detect_pauses,
@@ -8,14 +9,14 @@ from audioprocessing import (
     text_to_speech_with_features,
 )
 from pymongo import MongoClient
-from config import Config
+from app.config import Config
 import subprocess
 from werkzeug.utils import secure_filename
 from datetime import datetime
 audio_global_data = ""
 
 
-
+logging.basicConfig(level=logging.DEBUG)
 audio_bp = Blueprint('audio', __name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -49,6 +50,7 @@ def process_audio_route():
         reencoded_path = os.path.join(UPLOAD_FOLDER, 'reencoded_audio.wav')
         reencode_audio(original_path, reencoded_path)
     except Exception as e:
+        logging.error(f"Audio re-encoding failed: {e}")
         return jsonify({"error": "Audio re-encoding failed"}), 500
 
     try:
@@ -71,11 +73,16 @@ def process_audio_route():
         global audio_global_data
         audio_global_data = audio_data
     except Exception as e:
+        logging.error(f"Error in processing audio: {e}")
         return jsonify({"error": str(e)}), 500
 
     # Clean up
-    os.remove(original_path)
-    os.remove(reencoded_path)
+    try:
+        os.remove(original_path)
+        os.remove(reencoded_path)
+    except Exception as e:
+        logging.warning(f"Error deleting files: {e}")
+
 
     return jsonify({
         "id": str(result.inserted_id),
@@ -93,7 +100,7 @@ def generate_voice_from_db():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({"error": "Invalid JSON"}), 400  # Handle missing JSON data
+            return jsonify({"error": "Text is required"}), 400  # Handle missing JSON data
 
         text = data.get('text', "Default speech")
         if not text:
@@ -118,7 +125,7 @@ def generate_voice_from_db():
 
         # Verify file was created
         if not os.path.exists(filepath):
-            return jsonify({"error": "Generated audio file is missing"}), 500
+            return jsonify({"error": "Speech generated successfully!!"}), 500
 
         # Send the file directly to the frontend
         return send_file(filepath, mimetype="audio/mpeg")

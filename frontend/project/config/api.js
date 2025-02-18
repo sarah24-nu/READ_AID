@@ -1,7 +1,7 @@
 // config/api.js
 export const API_CONFIG = {
     development: {
-        baseURL: 'http://10.100.28.236:5000',
+        baseURL: 'http://192.168.100.14:5000',
         timeout: 10000,
     },
     production: {

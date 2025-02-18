@@ -135,11 +135,12 @@ const InitialSetupScreen = ({ navigation }) => {
       <View style={globalStyles.circle2}></View>
 
       <TouchableOpacity
-        style={styles.backArrow}
-        onPress={() => navigation.navigate('FontSetting')}
-      >
-        <Icon name="arrow-back" size={24} color="#000" />
-      </TouchableOpacity>
+  testID="back-button"
+  style={styles.backArrow}
+  onPress={() => navigation.navigate('FontSetting')}
+>
+  <Icon name="arrow-back" size={24} color="#000" />
+</TouchableOpacity>
 
       <Text style={[styles.title, { fontSize }]}>Tap microphone and</Text>
       <Text style={[styles.subtitle, { fontSize }]}>read aloud</Text>
@@ -153,17 +154,24 @@ const InitialSetupScreen = ({ navigation }) => {
         <Text style={[styles.sentence, { fontSize }]}>a mat.</Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.micButton}
-        onPress={recording ? stopRecording : startRecording}
-      >
-        <Icon name={recording ? 'stop' : 'mic'} size={24} color="black" />
-      </TouchableOpacity>
+      {/* Mic button */}
+<TouchableOpacity
+  testID="mic-button"
+  style={styles.micButton}
+  onPress={recording ? stopRecording : startRecording}
+>
+  <Icon name={recording ? 'stop' : 'mic'} size={24} color="black" />
+</TouchableOpacity>
 
-      {/* Next Button */}
-      <TouchableOpacity style={styles.nextButton} onPress={() => navigation.navigate('InitialSetupTwo')}>
-        <Icon name="arrow-forward" size={24} color="#000" />
-      </TouchableOpacity>
+
+      {/* Next button */}
+<TouchableOpacity 
+  testID="next-button"
+  style={styles.nextButton} 
+  onPress={() => navigation.navigate('InitialSetupTwo')}
+>
+  <Icon name="arrow-forward" size={24} color="#000" />
+</TouchableOpacity>
 
       <View style={globalStyles.circle3}></View>
       <View style={globalStyles.circle4}></View>

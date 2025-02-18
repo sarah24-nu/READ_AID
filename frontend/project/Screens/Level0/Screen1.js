@@ -112,7 +112,7 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
       });
 
       // Send request to backend to generate and return audio file
-      const response = await fetch('http://10.100.28.236:5000/api/generate_voice_from_db', {
+      const response = await fetch('http://192.168.100.14:5000/api/generate_voice_from_db', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -258,7 +258,12 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
   if (!fontsLoaded || loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000" />
+       <ActivityIndicator 
+  testID="loading-indicator"
+  size="large" 
+  color="#000" 
+/>
+
       </View>
     );
   }
@@ -275,75 +280,100 @@ const InitialSetupTwoScreen = ({ navigation, route }) => {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.container}>
-          <View style={styles.circle1}></View>
-          <View style={styles.circle2}></View>
+  style={{ flex: 1 }}
+  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+>
+  <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <View style={styles.container} testID="main-container">
+      <View style={styles.circle1}></View>
+      <View style={styles.circle2}></View>
 
-          <TouchableOpacity
-            style={styles.backArrow}
-            onPress={() => navigation.goBack()}
+      <TouchableOpacity
+        testID="back-button"
+        style={styles.backArrow}
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+
+      <Text style={styles.title} testID="title-text">
+        Tap microphone and
+      </Text>
+      <Text style={styles.subtitle} testID="subtitle-text">
+        read aloud
+      </Text>
+
+      <View style={styles.card} testID="word-card">
+        <Image
+          testID="word-image"
+          source={{ uri: currentWord?.imageUrl }}
+          style={styles.image}
+        />
+        <View style={styles.wordContainer}>
+          <Text style={styles.sentence} testID="word-text">
+            {currentWord?.word}
+          </Text>
+          <TouchableOpacity 
+            testID="speak-button"
+            style={styles.speakerButton}
+            onPress={() => handleSpeak(currentWord?.word)}
+            disabled={isSpeaking}
           >
-            <Icon name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-
-          <Text style={styles.title}>Tap microphone and</Text>
-          <Text style={styles.subtitle}>read aloud</Text>
-
-          <View style={styles.card}>
-            <Image
-              source={{ uri: currentWord?.imageUrl }}
-              style={styles.image}
+            <Icon 
+              name={isSpeaking ? "volume-high" : "volume-medium"} 
+              size={24} 
+              color={isSpeaking ? "#4CAF50" : "#000"} 
             />
-            <View style={styles.wordContainer}>
-              <Text style={styles.sentence}>{currentWord?.word}</Text>
-              <TouchableOpacity 
-                style={styles.speakerButton}
-                onPress={() => handleSpeak(currentWord?.word)}
-                disabled={isSpeaking}
-              >
-                <Icon 
-                  name={isSpeaking ? "volume-high" : "volume-medium"} 
-                  size={24} 
-                  color={isSpeaking ? "#4CAF50" : "#000"} 
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.phoneticContainer}>
-              <Text style={styles.phoneticBreakdown}>{phoneticBreakdown}</Text>
-              <TouchableOpacity 
-                style={styles.speakerButton}
-                onPress={() => handleSpeak(phoneticBreakdown, true)}
-                disabled={isSpeaking}
-              >
-                <Icon 
-                  name="volume-low" 
-                  size={20} 
-                  color={isSpeaking ? "#4CAF50" : "#000"} 
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.micButton}
-            onPress={recording ? stopRecording : startRecording}
-          >
-            <Icon name={recording ? 'stop' : 'mic'} size={24} color="black" />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.nextButton} onPress={handleNextWord}>
-            <Icon name="arrow-forward" size={24} color="#000" />
-          </TouchableOpacity>
-
-          <View style={styles.circle3}></View>
-          <View style={styles.circle4}></View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <View style={styles.phoneticContainer}>
+          <Text style={styles.phoneticBreakdown} testID="phonetic-text">
+            {phoneticBreakdown}
+          </Text>
+          <TouchableOpacity 
+            testID="phonetic-speak-button"
+            style={styles.speakerButton}
+            onPress={() => handleSpeak(phoneticBreakdown, true)}
+            disabled={isSpeaking}
+          >
+            <Icon 
+              name="volume-low" 
+              size={20} 
+              color={isSpeaking ? "#4CAF50" : "#000"} 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        testID="mic-button"
+        style={styles.micButton}
+        onPress={recording ? stopRecording : startRecording}
+      >
+        <Icon name={recording ? 'stop' : 'mic'} size={24} color="black" />
+      </TouchableOpacity>
+
+      {recording && <View testID="recording-indicator" style={styles.recordingIndicator} />}
+
+      <TouchableOpacity 
+        testID="next-button" 
+        style={styles.nextButton} 
+        onPress={handleNextWord}
+      >
+        <Icon name="arrow-forward" size={24} color="#000" />
+      </TouchableOpacity>
+
+      <View style={styles.circle3}></View>
+      <View style={styles.circle4}></View>
+
+      {loading && (
+        <View style={styles.loadingContainer} testID="loading-container">
+          <ActivityIndicator testID="loading-indicator" size="large" color="#000" />
+        </View>
+      )}
+    </View>
+  </ScrollView>
+</KeyboardAvoidingView>
   );
 };
 
